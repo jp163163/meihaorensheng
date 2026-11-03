@@ -253,7 +253,7 @@
       <div class="redeem-area" id="tab-redeem" style="display:none;">
         <p>输入兑换码 / 微店券码解锁深度报告 🥧</p>
         <div class="redeem-input">
-          <input type="text" id="redeemCode" maxlength="10" placeholder="XXXX-XXXX" oninput="this.value=this.value.toUpperCase()">
+          <input type="text" id="redeemCode" maxlength="20" placeholder="GP-JTXB-000001" oninput="this.value=this.value.toUpperCase()">
           <button onclick="redeemCode()">解锁</button>
         </div>
         <div class="redeem-error" id="redeemError" style="display:none;"></div>
@@ -286,60 +286,27 @@
 <script>
 // ========== 付费系统 ==========
 
-// 兑换码池（你可以随时在这里添加新兑换码，格式：['ABCD-1234','WXYZ-5678']）
-const validCodes = [
-  'DEMO-TEST',     // 演示测试码
-  'JP-0001',
-  'JP-0002',
-  'JP-0003',
-  'JP-0004',
-  'JP-0005',
-  'JP-0006',
-  'JP-0007',
-  'JP-0008',
-  'JP-0009',
-  'JP-0010',
-  'JP-0011',
-  'JP-0012',
-  'JP-0013',
-  'JP-0014',
-  'JP-0015',
-  'JP-0016',
-  'JP-0017',
-  'JP-0018',
-  'JP-0019',
-  'JP-0020',
-  'JP-0021',
-  'JP-0022',
-  'JP-0023',
-  'JP-0024',
-  'JP-0025',
-  'JP-0026',
-  'JP-0027',
-  'JP-0028',
-  'JP-0029',
-  'JP-0030',
-  'JP-0031',
-  'JP-0032',
-  'JP-0033',
-  'JP-0034',
-  'JP-0035',
-  'JP-0036',
-  'JP-0037',
-  'JP-0038',
-  'JP-0039',
-  'JP-0040',
-  'JP-0041',
-  'JP-0042',
-  'JP-0043',
-  'JP-0044',
-  'JP-0045',
-  'JP-0046',
-  'JP-0047',
-  'JP-0048',
-  'JP-0049',
-  'JP-0050',
-];
+// 券码规则：GP-JTXB-000001
+//   GP    = 你的专属前缀
+//   JTXB  = 商品名首字母（家庭馅饼）
+//   000001 = 六位流水号（1 ~ 999999）
+// 采用规则校验而非死名单，扫码/复制/大小写/带不带横杠都能识别
+const CODE_PREFIX = 'GPJTXB';
+const CODE_MAX = 999999;
+
+function normalizeCode(raw) {
+  return String(raw).toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+function isValidCode(raw) {
+  const c = normalizeCode(raw);
+  if (c === 'DEMOTEST') return true;          // 演示测试码
+  const m = c.match(new RegExp('^' + CODE_PREFIX + '(\d{6})$'));
+  if (!m) return false;
+  const n = parseInt(m[1], 10);
+  return n >= 1 && n <= CODE_MAX;
+}
+
 const usedCodes = new Set(); // 已使用的兑换码
 
 // 本地存储 key
@@ -361,7 +328,7 @@ function switchTab(tab) {
 }
 
 function redeemCode() {
-  const input = document.getElementById('redeemCode').value.trim().toUpperCase();
+  const input = normalizeCode(document.getElementById('redeemCode').value);
   const errEl = document.getElementById('redeemError');
   const okEl = document.getElementById('redeemSuccess');
   errEl.style.display = 'none'; okEl.style.display = 'none';
@@ -369,8 +336,8 @@ function redeemCode() {
   if (!input) {
     errEl.textContent = '请输入兑换码'; errEl.style.display = 'block'; return;
   }
-  if (!validCodes.includes(input)) {
-    errEl.textContent = '兑换码无效，请检查或联系客服'; errEl.style.display = 'block'; return;
+  if (!isValidCode(input)) {
+    errEl.textContent = '券码无效，请检查格式（如 GP-JTXB-000001）'; errEl.style.display = 'block'; return;
   }
   if (usedCodes.has(input)) {
     errEl.textContent = '这个兑换码已经被用过了 😅'; errEl.style.display = 'block'; return;
@@ -437,7 +404,7 @@ function applyUrlCode() {
   const code = getUrlCode();
   if (!code) return;
 
-  if (!validCodes.includes(code)) {
+  if (!isValidCode(code)) {
     showBanner('❌ 链接里的兑换码无效，请确认链接是否完整', '#e74c3c');
     return;
   }
