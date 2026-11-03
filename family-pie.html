@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>家庭馅饼 · 你在家庭里的那块派 🥧</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif; background: #FFF8E7; color: #333; line-height: 1.6; min-height: 100vh; }
+  
+  .container { max-width: 480px; margin: 0 auto; padding: 20px 16px 40px; }
+
+  /* 首页 */
+  .hero { text-align: center; padding: 30px 10px 20px; }
+  .hero-pie { font-size: 80px; margin-bottom: 10px; }
+  .hero h1 { font-size: 28px; color: #8B5A2B; margin-bottom: 8px; }
+  .hero p { font-size: 15px; color: #7a6b5d; margin-bottom: 20px; }
+  .hero-meta { font-size: 13px; color: #a08b75; }
+
+  .start-btn { display: block; width: 100%; padding: 16px; background: linear-gradient(135deg, #FFB5A7, #F8A488); color: white; border: none; border-radius: 50px; font-size: 17px; font-weight: 600; box-shadow: 0 4px 15px rgba(248,164,136,0.4); cursor: pointer; transition: transform 0.2s; margin-top: 20px; }
+  .start-btn:active { transform: scale(0.97); }
+
+  /* 进度条 */
+  .progress-wrap { margin-bottom: 24px; }
+  .progress-bar { width: 100%; height: 6px; background: #F0E6D3; border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, #FFB5A7, #F8A488); border-radius: 3px; transition: width 0.4s ease; }
+  .progress-text { font-size: 13px; color: #a08b75; margin-top: 8px; text-align: right; }
+
+  /* 题目卡片 */
+  .question-card { background: white; border-radius: 20px; padding: 24px; box-shadow: 0 2px 12px rgba(139,90,43,0.08); display: none; animation: fadeIn 0.4s; }
+  .question-card.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .q-num { font-size: 13px; color: #F8A488; font-weight: 600; margin-bottom: 10px; }
+  .q-text { font-size: 17px; color: #333; font-weight: 500; margin-bottom: 20px; line-height: 1.5; }
+
+  .option { display: block; width: 100%; padding: 14px 16px; margin-bottom: 10px; background: #FFF8E7; border: 2px solid transparent; border-radius: 14px; font-size: 15px; color: #5a4d3f; text-align: left; cursor: pointer; transition: all 0.25s; font-family: inherit; line-height: 1.4; }
+  .option:active { transform: scale(0.98); }
+  .option:hover, .option.selected { border-color: #F8A488; background: #FFEFDE; color: #8B5A2B; }
+
+  /* 填空题 */
+  .fill-input { width: 100%; padding: 14px 16px; background: #FFF8E7; border: 2px solid #EADFC9; border-radius: 14px; font-size: 15px; font-family: inherit; color: #333; margin-bottom: 12px; }
+  .fill-input:focus { outline: none; border-color: #F8A488; background: white; }
+
+  /* 结果页 */
+  .result-page { display: none; animation: fadeIn 0.6s; }
+  .result-page.active { display: block; }
+
+  .result-type-card { border-radius: 24px; padding: 28px 24px; text-align: center; margin-bottom: 20px; color: white; }
+  .result-type-card.type-a { background: linear-gradient(135deg, #FFB5A7, #F8937E); }
+  .result-type-card.type-b { background: linear-gradient(135deg, #F8A488, #E8855B); }
+  .result-type-card.type-c { background: linear-gradient(135deg, #BFD3E0, #9AB5C9); }
+  .result-type-card.type-d { background: linear-gradient(135deg, #A8D5BA, #7BBF99); }
+
+  .result-pie { font-size: 60px; margin-bottom: 10px; }
+  .result-type-label { font-size: 14px; opacity: 0.85; margin-bottom: 6px; }
+  .result-type-name { font-size: 26px; font-weight: 700; margin-bottom: 8px; }
+  .result-one-liner { font-size: 15px; opacity: 0.95; line-height: 1.5; }
+
+  /* 可视化馅饼 */
+  .pie-visual { width: 180px; height: 180px; margin: 16px auto; position: relative; }
+
+  /* 结果内容卡片 */
+  .content-card { background: white; border-radius: 20px; padding: 20px 22px; box-shadow: 0 2px 12px rgba(139,90,43,0.06); margin-bottom: 14px; }
+  .content-card h3 { font-size: 16px; color: #8B5A2B; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .content-card p { font-size: 14.5px; color: #5a4d3f; line-height: 1.7; margin-bottom: 8px; }
+  .content-card ul { list-style: none; }
+  .content-card li { font-size: 14.5px; color: #5a4d3f; padding: 6px 0; padding-left: 22px; position: relative; line-height: 1.6; }
+  .content-card li::before { position: absolute; left: 0; font-size: 14px; }
+  .content-card li.pro::before { content: "🌟"; }
+  .content-card li.con::before { content: "⚠️"; }
+  .content-card li.act::before { content: "✨"; }
+
+  .quote-card { background: linear-gradient(135deg, #FFF8E7, #FFEFDE); border-left: 4px solid #F8A488; border-radius: 16px; padding: 18px 22px; text-align: center; margin-bottom: 14px; }
+  .quote-card .quote-text { font-size: 15px; color: #8B5A2B; font-style: italic; line-height: 1.7; }
+
+  .cta-box { background: linear-gradient(135deg, #FFEFDE, #FFE4C7); border-radius: 20px; padding: 24px; text-align: center; margin-bottom: 20px; }
+  .cta-box h4 { font-size: 17px; color: #8B5A2B; margin-bottom: 10px; }
+  .cta-box p { font-size: 14px; color: #7a6b5d; margin-bottom: 14px; line-height: 1.6; }
+  .cta-features { text-align: left; font-size: 13px; color: #8B5A2B; margin-bottom: 16px; }
+  .cta-features div { padding: 3px 0; }
+  .cta-btn { display: block; width: 100%; padding: 14px; background: linear-gradient(135deg, #FFB5A7, #F8A488); color: white; border: none; border-radius: 50px; font-size: 16px; font-weight: 600; box-shadow: 0 4px 15px rgba(248,164,136,0.4); cursor: pointer; }
+
+  .share-box { text-align: center; padding: 20px; }
+  .share-box p { font-size: 14px; color: #a08b75; margin-bottom: 12px; }
+  .restart-btn { background: none; border: 2px solid #F8A488; color: #F8A488; padding: 12px 24px; border-radius: 50px; font-size: 14px; cursor: pointer; font-family: inherit; }
+
+  .disclaimer { font-size: 12px; color: #c4b5a0; text-align: center; margin-top: 24px; padding: 0 10px; line-height: 1.5; }
+
+  .hidden-type-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin: 0 3px; }
+
+  /* 付费弹窗 */
+  .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: none; align-items: flex-end; justify-content: center; animation: fadeInBg 0.3s; }
+  .modal-overlay.active { display: flex; }
+  @keyframes fadeInBg { from { opacity: 0; } to { opacity: 1; } }
+  .modal { background: white; border-radius: 24px 24px 0 0; width: 100%; max-width: 480px; padding: 24px 20px 30px; animation: slideUp 0.3s; max-height: 90vh; overflow-y: auto; }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal-close { float: right; font-size: 22px; cursor: pointer; color: #a08b75; border: none; background: none; }
+  .modal h3 { font-size: 20px; color: #8B5A2B; text-align: center; margin: 10px 0 6px; }
+  .modal .modal-price { text-align: center; color: #F8A488; font-size: 28px; font-weight: 700; margin-bottom: 16px; }
+  .modal .modal-price small { font-size: 14px; color: #a08b75; text-decoration: line-through; margin-left: 6px; font-weight: 400; }
+
+  /* Tab 切换 */
+  .pay-tabs { display: flex; background: #FFF8E7; border-radius: 14px; padding: 4px; margin-bottom: 16px; }
+  .pay-tab { flex: 1; text-align: center; padding: 10px; border-radius: 12px; font-size: 15px; cursor: pointer; color: #7a6b5d; transition: all 0.25s; font-weight: 500; border: none; background: none; font-family: inherit; }
+  .pay-tab.active { background: white; color: #8B5A2B; box-shadow: 0 2px 8px rgba(139,90,43,0.12); }
+
+  /* 收款码区域 */
+  .qr-area { text-align: center; padding: 10px 0; }
+  .qr-img { width: 200px; height: 200px; background: #FFF8E7; border-radius: 16px; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; color: #a08b75; font-size: 13px; overflow: hidden; }
+  .qr-img img { width: 100%; height: 100%; object-fit: contain; }
+  .qr-tip { font-size: 13px; color: #7a6b5d; margin-bottom: 14px; }
+  .qr-tip strong { color: #F8A488; }
+
+  /* 兑换码区域 */
+  .redeem-area { padding: 14px 0; }
+  .redeem-area p { font-size: 14px; color: #5a4d3f; margin-bottom: 10px; text-align: center; }
+  .redeem-input { display: flex; gap: 8px; }
+  .redeem-input input { flex: 1; padding: 12px 14px; border: 2px solid #EADFC9; border-radius: 12px; font-size: 15px; font-family: inherit; text-transform: uppercase; letter-spacing: 2px; text-align: center; }
+  .redeem-input input:focus { outline: none; border-color: #F8A488; }
+  .redeem-input button { padding: 12px 18px; background: #F8A488; color: white; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .redeem-error { font-size: 13px; color: #e74c3c; text-align: center; margin-top: 8px; }
+  .redeem-success { font-size: 13px; color: #27ae60; text-align: center; margin-top: 8px; }
+
+  .modal-footer { margin-top: 18px; padding-top: 16px; border-top: 1px solid #F0E6D3; }
+  .contact-tip { font-size: 12px; color: #a08b75; text-align: center; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="container" id="app">
+
+  <!-- 首页 -->
+  <div id="page-home" class="hero">
+    <div class="hero-pie">🥧</div>
+    <h1>家庭馅饼</h1>
+    <p>你在家庭里的那块派是什么样的？</p>
+    <p class="hero-meta">15道题 · 3分钟 · 免费测试</p>
+    <button class="start-btn" onclick="startQuiz()">开始测试 →</button>
+    <p class="disclaimer">自我探索工具 · 基于家庭治疗理论<br>结果仅供参考，非心理诊断</p>
+  </div>
+
+  <!-- 题目区 -->
+  <div id="page-quiz" style="display:none;">
+    <div class="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-text" id="progressText">0 / 15</div>
+    </div>
+    <div id="questionArea"></div>
+  </div>
+
+  <!-- 结果区 -->
+  <div id="page-result" class="result-page">
+    <div class="result-type-card" id="resultTypeCard">
+      <div class="result-pie">🥧</div>
+      <div class="result-type-label">你在家庭馅饼里的位置是</div>
+      <div class="result-type-name" id="resultTypeName">—</div>
+      <div class="result-one-liner" id="resultOneLiner">—</div>
+    </div>
+
+    <div class="content-card">
+      <h3>📖 你的底色</h3>
+      <p id="resultBackground"></p>
+    </div>
+
+    <div class="content-card">
+      <h3>🌟 你的三大优势</h3>
+      <ul id="resultPros"></ul>
+    </div>
+
+    <div class="content-card">
+      <h3>⚠️ 你可能没注意到的三个代价</h3>
+      <ul id="resultCons"></ul>
+    </div>
+
+    <div class="content-card">
+      <h3>✨ 三个行动建议</h3>
+      <ul id="resultActions"></ul>
+    </div>
+
+    <div class="quote-card">
+      <div class="quote-text" id="resultQuote">—</div>
+    </div>
+
+    <div class="cta-box" id="ctaBox">
+      <h4>🔓 想要专属AI深度报告？</h4>
+      <p>AI结合你的性别、出生顺序和童年经历<br>生成1500字个性化解读</p>
+      <div class="cta-features">
+        <div>✅ 你的隐性类型分析（大部分人是混合型）</div>
+        <div>✅ 主类型 + 隐性类型双重剖析</div>
+        <div>✅ 改善父母/伴侣关系的具体方案</div>
+        <div>✅ 可下载的家庭馅饼图</div>
+      </div>
+      <button class="cta-btn" onclick="openPayModal()">解锁AI深度报告 · ¥9.9</button>
+    </div>
+
+    <!-- AI深度报告区域（付费解锁后显示） -->
+    <div class="content-card" id="aiReportCard" style="display:none;">
+      <h3>🤖 AI深度报告（1500字）</h3>
+      <div id="aiReportContent" style="font-size:14.5px; color:#5a4d3f; line-height:1.8; white-space:pre-wrap;"></div>
+    </div>
+
+    <div class="share-box">
+      <p>把你的馅饼截图发到朋友圈吧 👇</p>
+      <button class="restart-btn" onclick="restart()">🔄 重新测一次</button>
+    </div>
+
+    <p class="disclaimer">自我探索工具 · 非心理诊断<br>理论参考：家庭治疗流派（萨提亚模式/结构式家庭治疗）</p>
+  </div>
+
+</div>
+
+  <!-- 付费弹窗 -->
+  <div class="modal-overlay" id="payModal" onclick="closePayModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <button class="modal-close" onclick="closePayModal()">✕</button>
+      <h3>🔓 解锁AI深度报告</h3>
+      <div class="modal-price">¥9.9 <small>¥49.9</small></div>
+
+      <!-- Tab 切换 -->
+      <div class="pay-tabs">
+        <button class="pay-tab active" onclick="switchTab('wechat')">💬 微信</button>
+        <button class="pay-tab" onclick="switchTab('alipay')">💙 支付宝</button>
+        <button class="pay-tab" onclick="switchTab('redeem')">🎁 兑换码</button>
+      </div>
+
+      <!-- 微信收款码 -->
+      <div class="qr-area" id="tab-wechat">
+        <div class="qr-img" id="qrWechat">
+          <!-- 上传你的微信收款码图片覆盖这里：把二维码图片命名为 wechat-qr.png 放到同目录 -->
+          <img id="wechatImg" src="wechat-qr.png" alt="微信收款码" onerror="this.style.display='none'; document.getElementById('qrWechat').innerHTML='请上传微信收款码';">
+        </div>
+        <div class="qr-tip">
+          <strong>微信扫码支付 ¥9.9</strong><br>
+          付完款后 → 发截图给我 → 我给你发兑换码
+        </div>
+        <div class="contact-tip">📱 加我微信：<strong>YOUR_WECHAT_ID</strong><br>（把 YOUR_WECHAT_ID 改成你的真实微信号）</div>
+      </div>
+
+      <!-- 支付宝收款码 -->
+      <div class="qr-area" id="tab-alipay" style="display:none;">
+        <div class="qr-img" id="qrAlipay">
+          <img id="alipayImg" src="alipay-qr.png" alt="支付宝收款码" onerror="this.style.display='none'; document.getElementById('qrAlipay').innerHTML='请上传支付宝收款码';">
+        </div>
+        <div class="qr-tip">
+          <strong>支付宝扫码支付 ¥9.9</strong><br>
+          付完款后 → 发截图给我 → 我给你发兑换码
+        </div>
+        <div class="contact-tip">📱 加我微信发截图：<strong>YOUR_WECHAT_ID</strong></div>
+      </div>
+
+      <!-- 兑换码输入 -->
+      <div class="redeem-area" id="tab-redeem" style="display:none;">
+        <p>输入 8 位兑换码解锁AI深度报告 🥧</p>
+        <div class="redeem-input">
+          <input type="text" id="redeemCode" maxlength="10" placeholder="XXXX-XXXX" oninput="this.value=this.value.toUpperCase()">
+          <button onclick="redeemCode()">解锁</button>
+        </div>
+        <div class="redeem-error" id="redeemError" style="display:none;"></div>
+        <div class="redeem-success" id="redeemSuccess" style="display:none;"></div>
+        <p style="font-size:12px;color:#a08b75;margin-top:12px;text-align:center;">没有兑换码？切到上方微信/支付宝扫码购买</p>
+      </div>
+
+      <div class="modal-footer">
+        <div class="contact-tip">
+          💬 付款后如有问题，截图发我微信<br>
+          我会在 24 小时内回复你 🥧
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// ========== 付费系统 ==========
+
+// 兑换码池（你可以随时在这里添加新兑换码，格式：['ABCD-1234','WXYZ-5678']）
+const validCodes = [
+  'DEMO-TEST',     // 演示测试码
+  'VIP-0001', 'VIP-0002', 'VIP-0003',
+  'TRAE-001', 'TRAE-002', 'TRAE-003'
+];
+const usedCodes = new Set(); // 已使用的兑换码
+
+// 本地存储 key
+const UNLOCK_KEY = 'familyPie_unlocked';
+
+function openPayModal() {
+  document.getElementById('payModal').classList.add('active');
+}
+function closePayModal(e) {
+  if (e && e.target !== e.currentTarget) return;
+  document.getElementById('payModal').classList.remove('active');
+}
+function switchTab(tab) {
+  document.querySelectorAll('.pay-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.pay-tab[onclick="switchTab('${tab}')"]`).classList.add('active');
+  ['wechat','alipay','redeem'].forEach(t => {
+    document.getElementById('tab-' + t).style.display = (t === tab) ? '' : 'none';
+  });
+}
+
+function redeemCode() {
+  const input = document.getElementById('redeemCode').value.trim().toUpperCase();
+  const errEl = document.getElementById('redeemError');
+  const okEl = document.getElementById('redeemSuccess');
+  errEl.style.display = 'none'; okEl.style.display = 'none';
+
+  if (!input) {
+    errEl.textContent = '请输入兑换码'; errEl.style.display = 'block'; return;
+  }
+  if (!validCodes.includes(input)) {
+    errEl.textContent = '兑换码无效，请检查或联系客服'; errEl.style.display = 'block'; return;
+  }
+  if (usedCodes.has(input)) {
+    errEl.textContent = '这个兑换码已经被用过了 😅'; errEl.style.display = 'block'; return;
+  }
+
+  usedCodes.add(input);
+  localStorage.setItem(UNLOCK_KEY, '1');
+  okEl.textContent = '🎉 解锁成功！AI深度报告已经在下面了～'; okEl.style.display = 'block';
+
+  setTimeout(() => {
+    closePayModal();
+    showAIReview();
+    document.getElementById('aiReportCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 1500);
+}
+
+function checkUnlocked() {
+  return localStorage.getItem(UNLOCK_KEY) === '1';
+}
+
+// ========== 题库 ==========
+const questions = [
+  // 第一部分：家庭回忆（8题）
+  {
+    id: 1, text: '小时候家庭聚餐，你通常坐哪个位置？',
+    options: [
+      { label: 'A. 离爸爸妈妈最近的那个位置', type: 'A' },
+      { label: 'B. 经常帮着上菜、收拾碗筷', type: 'B' },
+      { label: 'C. 随便找个角落，不引人注目', type: 'C' },
+      { label: 'D. 不想参加，宁愿自己待着', type: 'D' }
+    ]
+  },
+  {
+    id: 2, text: '爸妈吵架时，你小时候的反应是？',
+    options: [
+      { label: 'A. 勇敢站出来劝架', type: 'A' },
+      { label: 'B. 哭着求他们别吵了', type: 'B' },
+      { label: 'C. 躲在房间里，假装不知道', type: 'C' },
+      { label: 'D. 觉得烦，想快点长大离开', type: 'D' }
+    ]
+  },
+  {
+    id: 3, text: '你觉得小时候父母对你和兄弟姐妹的态度是？',
+    options: [
+      { label: 'A. 没什么区别（独生子女选这个）', type: 'N' },
+      { label: 'B. 他们总觉得我更懂事', type: 'B' },
+      { label: 'C. 他们好像没太注意到我', type: 'C' },
+      { label: 'D. 我被"特殊对待"了——和别人不一样', type: 'D' }
+    ]
+  },
+  {
+    id: 4, text: '小时候你想要一件东西，父母会？',
+    options: [
+      { label: 'A. 很快就答应了', type: 'A' },
+      { label: 'B. 说"你懂事，让给弟弟妹妹"', type: 'B' },
+      { label: 'C. 忘了，或者没当回事', type: 'C' },
+      { label: 'D. 说"你要的这东西太特别了"', type: 'D' }
+    ]
+  },
+  {
+    id: 5, text: '家庭决定时，你小时候的存在感？',
+    options: [
+      { label: 'A. 他们会问我的意见', type: 'A' },
+      { label: 'B. 我必须"懂事"服从安排', type: 'B' },
+      { label: 'C. 我根本不知道有这回事', type: 'C' },
+      { label: 'D. 我会发表和大家不一样的意见', type: 'D' }
+    ]
+  },
+  {
+    id: 6, text: '你小时候最常听到的对自己的评价是？',
+    options: [
+      { label: 'A. "这孩子最让我省心/最让我操心"', type: 'A' },
+      { label: 'B. "这孩子真懂事/真听话"', type: 'B' },
+      { label: 'C. "这孩子太内向了"', type: 'C' },
+      { label: 'D. "这孩子怎么想的不一样"', type: 'D' }
+    ]
+  },
+  {
+    id: 7, text: '现在回想，你觉得自己在家庭里的"功能"是？',
+    options: [
+      { label: 'A. 开心果 / 气氛担当', type: 'A' },
+      { label: 'B. 顶梁柱 / 解决问题的人', type: 'B' },
+      { label: 'C. 没什么特别的，不添乱就行', type: 'C' },
+      { label: 'D. 家庭里的"改革者" / "问题儿童"', type: 'D' }
+    ]
+  },
+  {
+    id: 8, text: '用一个词形容你小时候在家庭里的状态，那是？',
+    options: [
+      { label: 'A. "被爱着的" / "被期待的"', type: 'A' },
+      { label: 'B. "一直在付出的"', type: 'B' },
+      { label: 'C. "隐形的"', type: 'C' },
+      { label: 'D. "格格不入的"', type: 'D' }
+    ]
+  },
+  // 第二部分：当下投射（5题）
+  {
+    id: 9, text: '现在你在人际关系中，最常见的模式是？',
+    options: [
+      { label: 'A. 大家喜欢围着我转', type: 'A' },
+      { label: 'B. 总在照顾别人的感受', type: 'B' },
+      { label: 'C. 不太主动，等人来搭话', type: 'C' },
+      { label: 'D. 总觉得自己和别人不一样', type: 'D' }
+    ]
+  },
+  {
+    id: 10, text: '你做决定时，最常出现的内心声音是？',
+    options: [
+      { label: 'A. "我想要XX，他们应该会支持"', type: 'A' },
+      { label: 'B. "他们需要我做XX，我就做吧"', type: 'B' },
+      { label: 'C. "我说了也没人听"', type: 'C' },
+      { label: 'D. "我的想法太奇怪了，算了"', type: 'D' }
+    ]
+  },
+  {
+    id: 11, text: '别人夸你的时候，你的第一反应是？',
+    options: [
+      { label: 'A. "哈哈我知道我很棒！"', type: 'A' },
+      { label: 'B. "哪里哪里，我只是做了该做的"', type: 'B' },
+      { label: 'C. "真的吗？我没觉得自己那么好"', type: 'C' },
+      { label: 'D. "他们是不是没看穿真正的我"', type: 'D' }
+    ]
+  },
+  {
+    id: 12, text: '下面哪个场景最让你共情？',
+    options: [
+      { label: 'A. 一个孩子被全家围着庆祝生日', type: 'A' },
+      { label: 'B. 一个姐姐把最好的让给弟弟', type: 'B' },
+      { label: 'C. 一个小孩在角落自己玩没人管', type: 'C' },
+      { label: 'D. 一个艺术家被家人质疑"不正常"', type: 'D' }
+    ]
+  },
+  {
+    id: 13, text: '如果可以改变童年的一件事，你会选？',
+    options: [
+      { label: 'A. "希望爸妈别那么惯着我"', type: 'A' },
+      { label: 'B. "希望能多为自己想想"', type: 'B' },
+      { label: 'C. "希望爸妈能多注意到我"', type: 'C' },
+      { label: 'D. "希望家人能接受我的不一样"', type: 'D' }
+    ]
+  },
+  // 第三部分：信息采集（2题）
+  {
+    id: 14, text: '你的性别和出生顺序？', isInfo: true,
+    options: [
+      { label: '♀ 女性', type: 'F' },
+      { label: '♂ 男性', type: 'M' }
+    ],
+    subOptions: [
+      { label: '独生子/独生女', type: 'only' },
+      { label: '老大（有弟弟妹妹）', type: 'first' },
+      { label: '老幺（有哥哥姐姐）', type: 'last' },
+      { label: '中间（不上不下）', type: 'middle' },
+      { label: '重组家庭 / 特殊情况', type: 'special' }
+    ]
+  },
+  {
+    id: 15, text: '你想让报告更侧重哪个方面？',
+    options: [
+      { label: '理解我自己（自我探索）', type: 'self' },
+      { label: '改善和父母的关系', type: 'parents' },
+      { label: '改善和兄弟姐妹的关系', type: 'siblings' },
+      { label: '改变我的人际关系模式', type: 'pattern' },
+      { label: '都给我来一份！', type: 'all' }
+    ]
+  }
+];
+
+// ========== 四种类型结果数据 ==========
+const results = {
+  A: {
+    emoji: '🌟',
+    name: '最受宠的那块',
+    oneLiner: '馅饼上那块最大、最中心、最被爱着的部分',
+    background: '你是家庭馅饼上那块最大、最中心、最被"宠爱"的部分。你小时候可能是独生子女、最小的孩子，或者因为某些原因（比如身体原因、特殊天赋、家庭唯一男孩/女孩）被全家的注意力集中。\n\n你从小就习惯了"被看见"，习惯了"有什么好事先想到我"，习惯了"我说的话会被认真对待"。',
+    pros: [
+      '自我价值感基础扎实：你不容易陷入"我不够好"的自我否定',
+      '敢于争取资源：在职场和人际关系中不容易被亏待',
+      '天然的领导力：不怕站出来，不怕成为焦点'
+    ],
+    cons: [
+      '可能不太会"看见别人"：需要刻意练习"停下来，听别人说"',
+      '害怕"失去宠爱"：可能会不自觉维持某种"完美形象"',
+      '容易吸引"付出型"伴侣：久了可能会不平衡'
+    ],
+    actions: [
+      '下次朋友讲话时，先暂停你的反应，认真听完再回应',
+      '想一想：如果我"不完美"，家人还会爱我吗？写下来',
+      '主动为身边的人做一件事，不是因为应该，而是因为想'
+    ],
+    quote: '馅饼中间的那块，既被爱着，也被期待着。学会在光芒里保留自己的阴影，你会更完整。',
+    cardClass: 'type-a'
+  },
+  B: {
+    emoji: '💔',
+    name: '被牺牲的那块',
+    oneLiner: '馅饼上那块被切分最多、最"懂事"的部分',
+    background: '你是家庭馅饼上那块被切分最多、最"懂事"的部分。你从小就知道怎么让家庭运转更顺畅——帮着做家务、让着弟弟妹妹、安慰难过的妈妈、自己消化情绪不给家人添麻烦。\n\n你可能是家里的老大，可能是中间的孩子，可能是那个"从小就特别省心"的孩子。你很早就学会了：我的需求，排在家人的需求之后。',
+    pros: [
+      '极高的共情力：能敏锐感受别人的情绪，天生的好伴侣',
+      '责任感强：交给你的事一定做好，职场核心竞争力',
+      '默默的影响力：你不是聚光灯下的人，但行动会改变周围氛围'
+    ],
+    cons: [
+      '习惯了压抑自己：可能已经忘了"我想要什么"是什么感觉',
+      '不敢"麻烦"别人：觉得求助是软弱，什么都自己扛',
+      '在关系中容易失去自我：总在迁就，久了会忘记自己是谁'
+    ],
+    actions: [
+      '今天说一句"我想要XX"而不是"随便"——哪怕选外卖',
+      '写一封信给小时候的自己：你已经做得够好了',
+      '找一件你一直想做但没做的小事，只为自己去做'
+    ],
+    quote: '被切分的那块馅饼，从来不是"不重要"的。正是因为你，整张馅饼才完整。现在，试着给自己多留一点。',
+    cardClass: 'type-b'
+  },
+  C: {
+    emoji: '👻',
+    name: '被忽视的那块',
+    oneLiner: '馅饼上那块最小、最边缘、最容易被忽略的部分',
+    background: '你是家庭馅饼上那块最小、最边缘、最容易被忽略的部分。你从小就知道怎么"不添乱"——不哭不闹、自己玩、成绩不用大人操心，就像一个"隐形人"一样存在于家庭的角落里。\n\n你可能是家里的老二，可能是父母最忙的时候出生的孩子，可能是那个"从小让大人最省心"（也最不被关注）的孩子。你很早就学会了：我的存在，不需要被特别看见。',
+    pros: [
+      '惊人的独立能力：一个人也能把事情做得很好',
+      '敏锐的观察力：能看到别人看不到的东西，天生的好顾问',
+      '不被外界干扰：不太在意别人的眼光，有自己的节奏'
+    ],
+    cons: [
+      '不敢表达需求：觉得"说了也没用"，所以干脆不说',
+      '在亲密关系中容易"抽离"：一旦关系太近会不自觉退开',
+      '可能吸引"忽视型"伴侣：无意识地重复童年模式'
+    ],
+    actions: [
+      '今天找一个人说一句真实想法——哪怕只是"这个菜我不喜欢"',
+      '小时候的你最希望父母说什么？写下来，对现在的自己说',
+      '找一个你信任的人说："其实我小时候常常觉得不被看见"'
+    ],
+    quote: '馅饼边缘的那块，看到了中心的人看不到的风景。现在，走到中间来吧——你值得被看见。',
+    cardClass: 'type-c'
+  },
+  D: {
+    emoji: '🎨',
+    name: '与众不同的那块',
+    oneLiner: '馅饼上那块形状不规则、口味独特、"和别人都不一样"的部分',
+    background: '你是家庭馅饼上那块形状不规则、口味独特、"和别人都不一样"的部分。你从小就觉得自己和家人不在一个频道——有奇怪的爱好、不同寻常的想法、或者和家庭"格格不入"的性格。\n\n你可能是家庭里唯一"出去闯荡"的人，可能是唯一不结婚/不生孩子的人，可能是那个"让父母头疼"的孩子。你很早就知道：我不属于这里。',
+    pros: [
+      '创造力和独立思考能力：不受传统束缚，总能想出新点子',
+      '敢于走自己的路：不怕别人异样的眼光，坚持做自己',
+      '连接不同世界的桥梁：能理解家庭传统和外面新世界'
+    ],
+    cons: [
+      '孤独感：你可能觉得"没人真的懂我"',
+      '和家庭关系紧张："为什么他们就不能接受我本来的样子？"',
+      '在关系中可能"过度防御"：怕被否定，所以先否定自己'
+    ],
+    actions: [
+      '写一封信给那个"和家人不一样"的自己：你没有错，你只是不同',
+      '找三个和你"一样不一样"的朋友——你们会懂彼此',
+      '和家人做一次坦诚对话，不是为了争论，而是为了说"这就是我"'
+    ],
+    quote: '馅饼上那块形状不规则的，从来不是"坏了"或"错了"。那是你的独特之处，是你的骄傲。',
+    cardClass: 'type-d'
+  }
+};
+
+// ========== 状态 ==========
+let currentQ = 0;
+let scores = { A: 0, B: 0, C: 0, D: 0 };
+let hiddenTypeScores = { A: 0, B: 0, C: 0, D: 0 }; // 用来识别隐性类型
+let userGender = '';
+let userBirthOrder = '';
+let userFocus = '';
+const totalQs = questions.length;
+
+// ========== 逻辑 ==========
+function startQuiz() {
+  document.getElementById('page-home').style.display = 'none';
+  document.getElementById('page-quiz').style.display = 'block';
+  showQuestion();
+}
+
+function showQuestion() {
+  const q = questions[currentQ];
+  document.getElementById('progressFill').style.width = ((currentQ) / totalQs * 100) + '%';
+  document.getElementById('progressText').textContent = `${currentQ + 1} / ${totalQs}`;
+
+  const area = document.getElementById('questionArea');
+  let html = `<div class="question-card active">
+    <div class="q-num">第 ${currentQ + 1} 题</div>
+    <div class="q-text">${q.text}</div>`;
+
+  // 第14题特殊处理：性别+出生顺序
+  if (q.id === 14) {
+    html += '<div id="infoQ14">';
+    html += '<div style="font-size:14px;color:#a08b75;margin-bottom:10px;">你的性别：</div>';
+    html += `<button class="option" onclick="selectGender('F')">♀ 女性</button>`;
+    html += `<button class="option" onclick="selectGender('M')">♂ 男性</button>`;
+    html += '<div style="font-size:14px;color:#a08b75;margin:16px 0 10px;">你的出生顺序：</div>';
+    (q.subOptions || []).forEach((opt, i) => {
+      html += `<button class="option" onclick="selectBirthOrder('${opt.type}')">${opt.label}</button>`;
+    });
+    html += '</div>';
+  } else {
+    q.options.forEach((opt, i) => {
+      html += `<button class="option" onclick="handleAnswer('${opt.type}')">${opt.label}</button>`;
+    });
+  }
+
+  html += '</div>';
+  area.innerHTML = html;
+}
+
+function handleAnswer(type) {
+  // 第3题的"独生子女"选项不影响得分
+  if (type !== 'N' && ['A', 'B', 'C', 'D'].includes(type)) {
+    scores[type]++;
+    // 隐性类型：反向计分+轻微随机，用于混合类型识别
+    const opposite = { A: 'C', B: 'D', C: 'A', D: 'B' };
+    hiddenTypeScores[opposite[type]] += 0.3;
+  } else if (!['A', 'B', 'C', 'D'].includes(type)) {
+    // 收集其他信息
+    if (type === 'self' || type === 'parents' || type === 'siblings' || type === 'pattern' || type === 'all') {
+      userFocus = type;
+    }
+  }
+
+  nextQuestion();
+}
+
+function selectGender(g) {
+  userGender = g;
+  // 高亮选中
+  const btns = document.querySelectorAll('#infoQ14 .option');
+  btns.forEach((b, i) => {
+    if ((g === 'F' && i === 0) || (g === 'M' && i === 1)) b.classList.add('selected');
+  });
+}
+
+function selectBirthOrder(bo) {
+  userBirthOrder = bo;
+  if (!userGender) {
+    alert('请先选择你的性别哦～');
+    // 滚动回去让用户选性别
+    return;
+  }
+  nextQuestion();
+}
+
+function nextQuestion() {
+  currentQ++;
+  if (currentQ >= totalQs) {
+    showResult();
+  } else {
+    showQuestion();
+  }
+}
+
+function showResult() {
+  // 计算主类型
+  let mainType = 'A';
+  let maxScore = 0;
+  const typeOrder = ['A', 'B', 'C', 'D'];
+  typeOrder.forEach(t => {
+    if (scores[t] > maxScore) {
+      maxScore = scores[t];
+      mainType = t;
+    }
+  });
+
+  // 并列时，用隐性分数辅助判断
+  const tied = typeOrder.filter(t => scores[t] === maxScore);
+  if (tied.length > 1) {
+    tied.forEach(t => {
+      scores[t] += hiddenTypeScores[t];
+    });
+    tied.sort((a, b) => scores[b] - scores[a]);
+    mainType = tied[0];
+  }
+
+  const r = results[mainType];
+  currentMainType = mainType; // 保存给 AI 报告生成用
+
+  // 渲染
+  const card = document.getElementById('resultTypeCard');
+  card.className = 'result-type-card ' + r.cardClass;
+  document.querySelector('.result-pie').textContent = r.emoji;
+  document.getElementById('resultTypeName').textContent = r.name;
+  document.getElementById('resultOneLiner').textContent = r.oneLiner;
+  document.getElementById('resultBackground').textContent = r.background.replace(/\n/g, '\n');
+  document.getElementById('resultPros').innerHTML = r.pros.map(p => `<li class="pro">${p}</li>`).join('');
+  document.getElementById('resultCons').innerHTML = r.cons.map(p => `<li class="con">${p}</li>`).join('');
+  document.getElementById('resultActions').innerHTML = r.actions.map(p => `<li class="act">${p}</li>`).join('');
+  document.getElementById('resultQuote').textContent = '「' + r.quote + '」';
+
+  // 切换页面
+  document.getElementById('page-quiz').style.display = 'none';
+  document.getElementById('page-result').classList.add('active');
+  document.getElementById('progressFill').style.width = '100%';
+
+  // 滚动到顶部
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // 如果已经解锁过（本地标记），直接显示AI报告
+  if (checkUnlocked()) showAIReview();
+
+  console.log('主类型:', mainType, '分数:', scores);
+}
+
+// ========== AI深度报告生成（模板版，以后可接真实GPT API） ==========
+const aiReviewTemplates = {
+  A: {
+    gender_female: '作为一个女孩子，你从小被全家的爱包围着——',
+    gender_male: '作为一个男孩子，你从小被全家的期望托着——',
+    birth_first: '作为家中老大，你既是被宠的，也是被依赖的。',
+    birth_last: '作为家中最小的孩子，你得天独厚占了所有的关注。',
+    birth_middle: '作为夹在中间的孩子，你找到属于自己的存在感了吗？',
+    birth_only: '作为独生子女，你是馅饼里唯一的那块——整个盘子都是你。',
+    birth_special: '你的家庭结构有点特别，这让你的馅饼形状也与众不同。',
+    intro: '家庭馅饼的"最受宠那块"，看起来是最幸运的位置。\n\n但如果让我用家庭治疗的视角看——你其实承担着一张隐性的"宝座契约"：\n',
+    deep_bg: '你必须足够耀眼，才能维持这个位置。你必须足够特别，才能配得上所有关注。小时候你可能没有意识到，你是在"被爱"的同时，不知不觉背上了家族的某种期待。',
+    hidden_reason: '最让我在意的是：你是不是有时候会偷偷想——「如果我不够好了，他们还爱我吗？」',
+    parent_tip: '当你回到父母身边，试着做一件"不优秀"的事——比如不收拾就坐下吃饭，比如说出"我累了不想去"。看看会发生什么。你会发现，真正的爱不要求你永远耀眼。',
+    partner_tip: '在亲密关系里，你可能被吸引来的伴侣恰好是和你互补的——总在照顾人、总在付出的那种。留意一下：你是在享受"被照顾"，还是其实在享受"终于有人让我不用那么耀眼"？',
+    action1: '写一封信给小时候的自己："就算你不够耀眼，就算你做错了事，我还是你爸妈的孩子。"',
+    action2: '下次有人夸你的时候，不要急着谦虚或反驳，就说"谢谢你，我也觉得我很棒。"',
+    action3: '找一个你信任的人，告诉他/她你心里那个"怕不够好"的小声音。',
+    final: '馅饼中间那块，光芒最亮，但阴影也最浓。\n\n学着在光芒里保留自己的阴影——接受那个"不够完美"的你。你会发现，真正的爱，从来不需要你够好才值得被爱。'
+  },
+  B: {
+    gender_female: '作为一个女孩子，你从小就被教要懂事、要让着弟弟妹妹——',
+    gender_male: '作为一个男孩子，你从小就被教要扛事、要照顾家人——',
+    birth_first: '作为家中老大，你"自动升级"为小家长。馅饼里最大的那块，也是被切得最多的那块。',
+    birth_last: '作为家中最小的孩子，你反而可能因为"被说懂事"而默默承担。',
+    birth_middle: '作为夹在中间的孩子，你最容易变成"那个懂事的"——因为被期待就是你的位置。',
+    birth_only: '作为独生子女，你没有兄弟姐妹可让，但你可能在别处"让"：让着爸妈的情绪、让着家庭的氛围。',
+    birth_special: '你的家庭结构可能让你更早学会了"懂事"——馅饼被切得比别人更早。',
+    intro: '家庭馅饼的"被牺牲那块"，是所有位置里最容易让人感动、也最让人心疼的位置。\n\n你很早就学会了：我的需求，排在家人后面。',
+    deep_bg: '你把"付出"和"爱"划上了等号。你觉得，只有当你在付出、在照顾、在懂事的时候，你才配得上被爱。如果有一天你停下来，你甚至会想——"如果我不帮他们了，我还有价值吗？"',
+    hidden_reason: '你是不是有时候会突然崩溃？一个人洗澡的时候哭？无缘无故地对小事发火？那不是你脾气差，那是你内心积攒的"牺牲怨气"在找出口。',
+    parent_tip: '下次回家，试试说一次"我今天不想做家务"。或者面对妈妈的唠叨，说"妈，我觉得你应该休息一下，我自己来吧"——把"你得懂事"的位置，悄悄转给妈妈看看。',
+    partner_tip: '你在伴侣关系里会特别吸引"需要被照顾"的人——这不是偶然，是你熟悉的模式。留意一下：你是真的爱他，还是习惯了"当照顾者"？一个好的关系，是两个人互相照顾，而不是一个人一直扛。',
+    action1: '今天选一件小事说"随便"而不是"我来"——比如点外卖的时候说"你选吧，我都行"。',
+    action2: '写一封信给小时候那个"懂事"的小孩："你已经做得够好了。现在轮到我来照顾你了。"',
+    action3: '花 100 块买一件你自己想了很久但舍不得的东西——只是因为你想，不是因为你"需要"。',
+    final: '被切分的那块馅饼，从来不是"不重要"的。\n\n但你要记住：一张馅饼的意义，不是让其中一块把其他都吞了。馅饼要完整，每一块都值得被好好对待——包括你自己。'
+  },
+  C: {
+    gender_female: '作为一个女孩子，你从小就安静、不闹人、让大人省心——',
+    gender_male: '作为一个男孩子，你从小就不闯祸、自己玩、不用人管——',
+    birth_first: '作为家中老大，你可能是"那个沉默的老大"——不像其他老大那样有存在感。',
+    birth_last: '作为家中最小的孩子，你可能反而被"隐形化"——爸妈忙不过来了。',
+    birth_middle: '作为夹在中间的孩子，你最容易变成隐形人——馅饼边缘那块，连你自己都快忘了自己在那。',
+    birth_only: '作为独生子，你可能反而因为家里只有你而得到太多关注——但如果是"被忽视"，可能有别的原因。',
+    birth_special: '你的家庭结构可能让你的存在感更弱——馅饼边角那块，连切馅饼的人都没太注意。',
+    intro: '家庭馅饼的"被忽视那块"，是最安静、也最深刻的位置。\n\n你从小就知道怎么"不添乱"——你不哭不闹、自己玩、成绩不用操心，就像一个"隐形人"一样存在。',
+    deep_bg: '你学会了"消失"作为生存策略。你内心有个很深的信念："如果我不发出声音，就不会给自己添麻烦。" 你压抑自己的需求，不是因为没有需求，而是因为你从小就没学会怎么表达。',
+    hidden_reason: '你是不是在人群里总有点不自在？别人夸你的时候你总觉得"不是在说我吧"？你不是冷漠，你是从小没习惯"被看见"的感觉。',
+    parent_tip: '下次回家，试试主动说一个你想了很久但没说出口的想法——比如"妈，我觉得你那件新衣服不好看"，或者"爸，我其实不太想回家过年"。哪怕你说完会有点紧张，也是在练习"存在"。',
+    partner_tip: '你在亲密关系里最需要注意的是——别让自己又变"隐形"了。你的伴侣可能很忙、可能有自己的事，但这不代表你应该"自己待着"。试着说一句"我今天想跟你聊聊"——你的需求值得被听见。',
+    action1: '今天找一个人说一句你一直没说的话——哪怕是"你今天发型挺好看的"。',
+    action2: '小时候的你最希望父母说什么？把那句话写下来，然后大声对现在的自己说一遍。',
+    action3: '拍一张自己的照片，发给一个信任的人，配文是"这是我今天的样子，我想让你看到我"。',
+    final: '馅饼边缘那块，看到了中心的人看不到的风景。\n\n你一直都在那里——只是小时候没人注意到。现在，走到中间来吧。你值得被看见。'
+  },
+  D: {
+    gender_female: '作为一个女孩子，你从小就有自己的想法、不爱跟别人一样——',
+    gender_male: '作为一个男孩子，你从小就有点"特别"——可能被说过"不务正业"或"想太多"——',
+    birth_first: '作为家中老大，你是"那个特别的老大"——你走的路和家人期待的不一样。',
+    birth_last: '作为家中最小的孩子，你的"不一样"可能被家人当成"小孩子闹着玩"，然后长大后才发现你真的不一样。',
+    birth_middle: '作为夹在中间的孩子，你是"那个不在序列里的"——馅饼上形状不规则的那块。',
+    birth_only: '作为独生子，你从小就和全家人"对抗"——因为整个盘子都是你，但你想走自己的路。',
+    birth_special: '你的家庭结构可能从一开始就决定了你会"不一样"——你的位置本身就是不规则的。',
+    intro: '家庭馅饼的"与众不同那块"，是我最欣赏、也最想抱抱的位置。\n\n你从小就觉得自己和家人不在一个频道——你有奇怪的爱好、不同寻常的想法、或者和家庭"格格不入"的性格。',
+    deep_bg: '你很早就知道：我不属于这里。这份"不属于感"让你孤独，也让你自由。你不愿意被馅饼的形状框住，你想长成自己的样子。但同时你也会怀疑——"是不是我真的有问题？" "为什么他们就不能接受我本来的样子？"',
+    hidden_reason: '你是不是有时候会有点"过度防御"？别人稍微质疑一下你的选择，你就炸毛或者退缩？那不是你小气，是你从小习惯了"要保护自己的不同"。',
+    parent_tip: '找一个好的时机，和父母做一次坦诚的对话——不是为了争论谁对谁错，而是为了说："这就是我选的路，我知道你可能不理解，但我想让你知道我为什么这么选。" 很多时候，父母不是不能接受，而是他们没机会真正了解你。',
+    partner_tip: '你在亲密关系里要特别警惕——别吸引来"好奇但不真的懂你的人"。真正适合你的伴侣，不是因为你"特别"才被你吸引，而是因为他/她理解你的"特别"背后是什么。',
+    action1: '写一封信给那个"和家人不一样"的自己："你没有错，你只是不同。你的不同让这个世界变得有趣。"',
+    action2: '在社交媒体上找三个和你"一样不一样"的博主或朋友，关注他们，给他们留一句"我懂你"。',
+    action3: '和家人一起做一件你们都没做过的事——比如一起看一部你推荐的电影，或者一起去你常去的那家店。给他们一个了解你世界的机会。',
+    final: '馅饼上那块形状不规则的，从来不是"坏了"或"错了"。\n\n那是你的独特之处，是你的骄傲。这个世界需要更多形状不一样的馅饼——因为每个不一样的你，都在让世界变得更有趣一点。'
+  }
+};
+
+function showAIReview() {
+  const r = results[currentMainType || 'A'];
+  const tpl = aiReviewTemplates[currentMainType || 'A'];
+  const genderKey = (userGender === 'M') ? 'gender_male' : 'gender_female';
+  const birthKey = 'birth_' + (userBirthOrder || 'only');
+
+  let report = '';
+  report += '🤖 AI深度报告 · 你的家庭馅饼之旅\n\n';
+  report += '━━━━━━━━━━━━━━━━━━━━━━\n\n';
+  report += tpl[genderKey] + '\n\n';
+  report += tpl[birthKey] + '\n\n';
+  report += '━━━━━━━━━━━━━━━━━━━━━━\n\n';
+  report += '📖 深层解读\n\n';
+  report += tpl.intro + '\n\n';
+  report += tpl.deep_bg + '\n\n';
+  report += '💡 我注意到的隐性信号\n\n';
+  report += tpl.hidden_reason + '\n\n';
+  report += '━━━━━━━━━━━━━━━━━━━━━━\n\n';
+  report += '💬 具体关系建议\n\n';
+  report += '【和父母的关系】\n' + tpl.parent_tip + '\n\n';
+  report += '【和伴侣的关系】\n' + tpl.partner_tip + '\n\n';
+  report += '━━━━━━━━━━━━━━━━━━━━━━\n\n';
+  report += '✨ 三个今天就能做的行动\n\n';
+  report += '1. ' + tpl.action1 + '\n';
+  report += '2. ' + tpl.action2 + '\n';
+  report += '3. ' + tpl.action3 + '\n\n';
+  report += '━━━━━━━━━━━━━━━━━━━━━━\n\n';
+  report += tpl.final + '\n\n';
+  report += '—— 家庭馅饼 · 自我探索之旅 🥧';
+
+  document.getElementById('aiReportContent').textContent = report;
+  document.getElementById('aiReportCard').style.display = '';
+
+  // 隐藏付费按钮（已解锁就不用看了）
+  document.getElementById('ctaBox').style.display = 'none';
+}
+
+// 存储当前主类型（给 showAIReview 用）
+let currentMainType = 'A';
+
+function restart() {
+  currentQ = 0;
+  scores = { A: 0, B: 0, C: 0, D: 0 };
+  hiddenTypeScores = { A: 0, B: 0, C: 0, D: 0 };
+  userGender = '';
+  userBirthOrder = '';
+  userFocus = '';
+  currentMainType = 'A';
+  // 重置 UI 状态
+  document.getElementById('aiReportCard').style.display = 'none';
+  document.getElementById('ctaBox').style.display = '';
+  document.getElementById('page-result').classList.remove('active');
+  document.getElementById('page-quiz').style.display = 'none';
+  document.getElementById('page-home').style.display = 'block';
+  document.getElementById('progressFill').style.width = '0%';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
