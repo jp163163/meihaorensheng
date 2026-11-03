@@ -329,6 +329,77 @@ function checkUnlocked() {
   return localStorage.getItem(UNLOCK_KEY) === '1';
 }
 
+// ========== 专属链接自动解锁 ==========
+// 发货链接格式：https://jp163163.github.io/meihaorensheng/?code=JP-0001
+const RESULT_KEY = 'familyPie_result';
+
+function getUrlCode() {
+  let c = new URLSearchParams(window.location.search).get('code');
+  if (!c && window.location.hash) {
+    const m = window.location.hash.match(/code=([^&]+)/);
+    if (m) c = decodeURIComponent(m[1]);
+  }
+  return c ? c.trim().toUpperCase() : '';
+}
+
+function saveResultToStorage() {
+  try {
+    localStorage.setItem(RESULT_KEY, JSON.stringify({
+      type: currentMainType, gender: userGender, birth: userBirthOrder
+    }));
+  } catch (e) {}
+}
+
+function loadResultFromStorage() {
+  try {
+    const d = JSON.parse(localStorage.getItem(RESULT_KEY) || 'null');
+    return (d && results[d.type]) ? d : null;
+  } catch (e) { return null; }
+}
+
+function showBanner(text, color) {
+  const b = document.createElement('div');
+  b.textContent = text;
+  b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:1100;padding:14px 18px;' +
+    'font-size:14px;line-height:1.5;text-align:center;color:#fff;background:' + color +
+    ';box-shadow:0 2px 10px rgba(0,0,0,.15)';
+  document.body.appendChild(b);
+  setTimeout(() => {
+    b.style.transition = 'opacity .5s';
+    b.style.opacity = '0';
+    setTimeout(() => b.remove(), 600);
+  }, 4500);
+}
+
+function applyUrlCode() {
+  const code = getUrlCode();
+  if (!code) return;
+
+  if (!validCodes.includes(code)) {
+    showBanner('❌ 链接里的兑换码无效，请确认链接是否完整', '#e74c3c');
+    return;
+  }
+
+  localStorage.setItem(UNLOCK_KEY, '1');
+  const saved = loadResultFromStorage();
+
+  if (saved) {
+    // 已经测过：直接展示完整报告
+    currentMainType = saved.type;
+    userGender = saved.gender || '';
+    userBirthOrder = saved.birth || '';
+    renderResult(saved.type);
+    document.getElementById('page-home').style.display = 'none';
+    document.getElementById('page-quiz').style.display = 'none';
+    document.getElementById('page-result').classList.add('active');
+    showAIReview();
+    showBanner('✅ 专属链接已解锁，以下是你的完整深度报告', '#27ae60');
+  } else {
+    // 还没测过：先做测评，做完自动出报告
+    showBanner('✅ 已解锁！完成下面 15 道题，就能看到完整深度报告', '#27ae60');
+  }
+}
+
 // ========== 题库 ==========
 const questions = [
   // 第一部分：家庭回忆（8题）
@@ -665,6 +736,22 @@ function nextQuestion() {
   }
 }
 
+// 渲染指定类型的结果页（测评结束 和 专属链接直达 都走这里）
+function renderResult(type) {
+  const r = results[type];
+  if (!r) return;
+  const card = document.getElementById('resultTypeCard');
+  card.className = 'result-type-card ' + r.cardClass;
+  document.querySelector('.result-pie').textContent = r.emoji;
+  document.getElementById('resultTypeName').textContent = r.name;
+  document.getElementById('resultOneLiner').textContent = r.oneLiner;
+  document.getElementById('resultBackground').textContent = r.background.replace(/\n/g, '\n');
+  document.getElementById('resultPros').innerHTML = r.pros.map(p => `<li class="pro">${p}</li>`).join('');
+  document.getElementById('resultCons').innerHTML = r.cons.map(p => `<li class="con">${p}</li>`).join('');
+  document.getElementById('resultActions').innerHTML = r.actions.map(p => `<li class="act">${p}</li>`).join('');
+  document.getElementById('resultQuote').textContent = '「' + r.quote + '」';
+}
+
 function showResult() {
   // 计算主类型
   let mainType = 'A';
@@ -687,20 +774,9 @@ function showResult() {
     mainType = tied[0];
   }
 
-  const r = results[mainType];
-  currentMainType = mainType; // 保存给深度报告生成用
-
-  // 渲染
-  const card = document.getElementById('resultTypeCard');
-  card.className = 'result-type-card ' + r.cardClass;
-  document.querySelector('.result-pie').textContent = r.emoji;
-  document.getElementById('resultTypeName').textContent = r.name;
-  document.getElementById('resultOneLiner').textContent = r.oneLiner;
-  document.getElementById('resultBackground').textContent = r.background.replace(/\n/g, '\n');
-  document.getElementById('resultPros').innerHTML = r.pros.map(p => `<li class="pro">${p}</li>`).join('');
-  document.getElementById('resultCons').innerHTML = r.cons.map(p => `<li class="con">${p}</li>`).join('');
-  document.getElementById('resultActions').innerHTML = r.actions.map(p => `<li class="act">${p}</li>`).join('');
-  document.getElementById('resultQuote').textContent = '「' + r.quote + '」';
+  currentMainType = mainType;
+  renderResult(mainType);
+  saveResultToStorage();
 
   // 切换页面
   document.getElementById('page-quiz').style.display = 'none';
@@ -849,6 +925,9 @@ function restart() {
   document.getElementById('progressFill').style.width = '0%';
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
+// 页面载入：如果链接里带 ?code=xxx，自动解锁
+window.addEventListener('load', applyUrlCode);
 </script>
 </body>
 </html>
