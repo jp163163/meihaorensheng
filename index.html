@@ -200,7 +200,8 @@
     </div>
 
     <div class="share-box">
-      <p>把你的馅饼截图发到朋友圈吧 👇</p>
+      <p>把你的馅饼卡片发到朋友圈吧 👇</p>
+      <button class="cta-btn" style="margin-bottom:12px;" onclick="makeShareCard()">📸 生成我的馅饼卡片</button>
       <button class="restart-btn" onclick="restart()">🔄 重新测一次</button>
     </div>
 
@@ -266,6 +267,19 @@
           我会在 24 小时内回复你 🥧
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- 分享卡片弹窗 -->
+  <div class="modal-overlay" id="shareModal" onclick="closeShareModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <button class="modal-close" onclick="closeShareModal()">✕</button>
+      <h3>📸 你的馅饼卡片</h3>
+      <p style="text-align:center;font-size:13px;color:#7a6b5d;margin-bottom:14px;">
+        手机上长按图片保存到相册，再发朋友圈/小红书
+      </p>
+      <img id="shareImg" style="width:100%;border-radius:16px;display:block;margin-bottom:16px;" alt="馅饼卡片">
+      <a id="shareDownload" download="家庭馅饼-我的结果.png" class="cta-btn" style="text-align:center;text-decoration:none;">⬇️ 保存图片</a>
     </div>
   </div>
 
@@ -752,6 +766,109 @@ function renderResult(type) {
   document.getElementById('resultQuote').textContent = '「' + r.quote + '」';
 }
 
+// ========== 生成分享卡片（Canvas 绘制，不依赖任何外部库） ==========
+const CARD_COLORS = {
+  'A': ['#FFC7B2', '#EF8A6B'],
+  'B': ['#F8BC96', '#DD7145'],
+  'C': ['#C6D8E4', '#8FA9BC'],
+  'D': ['#B6DFC4', '#71B78C']
+};
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function wrapLines(ctx, text, maxWidth) {
+  const lines = [];
+  let line = '';
+  for (const ch of text) {
+    if (ctx.measureText(line + ch).width > maxWidth && line) {
+      lines.push(line);
+      line = ch;
+    } else {
+      line += ch;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+function makeShareCard() {
+  const r = results[currentMainType];
+  if (!r) return;
+
+  const W = 1080, H = 1440;
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+  const cols = CARD_COLORS[currentMainType] || CARD_COLORS['A'];
+  const FONT = '"PingFang SC", -apple-system, "Microsoft YaHei", sans-serif';
+  const EMOJI_FONT = '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+
+  const grad = ctx.createLinearGradient(0, 0, W, H);
+  grad.addColorStop(0, cols[0]);
+  grad.addColorStop(1, cols[1]);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.textAlign = 'center';
+
+  ctx.fillStyle = 'rgba(255,255,255,0.95)';
+  ctx.font = 'bold 42px ' + FONT;
+  ctx.fillText('家 庭 馅 饼', W / 2, 118);
+  ctx.font = '26px ' + FONT;
+  ctx.fillStyle = 'rgba(255,255,255,0.78)';
+  ctx.fillText('你在家庭里的那一块', W / 2, 166);
+
+  ctx.font = '150px ' + EMOJI_FONT;
+  ctx.fillText(r.emoji, W / 2, 372);
+
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 76px ' + FONT;
+  ctx.fillText(r.name, W / 2, 488);
+
+  ctx.font = '34px ' + FONT;
+  ctx.fillStyle = 'rgba(255,255,255,0.92)';
+  const oneLines = wrapLines(ctx, r.oneLiner, 840);
+  let y = 552;
+  oneLines.forEach(l => { ctx.fillText(l, W / 2, y); y += 52; });
+
+  const quoteLines = wrapLines(ctx, '「' + r.quote + '」', 740);
+  const boxH = quoteLines.length * 54 + 96;
+  const boxY = Math.max(y + 50, 700);
+  ctx.fillStyle = 'rgba(255,255,255,0.96)';
+  roundRect(ctx, 90, boxY, W - 180, boxH, 36);
+  ctx.fill();
+
+  ctx.fillStyle = cols[1];
+  ctx.font = '32px ' + FONT;
+  let qy = boxY + 76;
+  quoteLines.forEach(l => { ctx.fillText(l, W / 2, qy); qy += 54; });
+
+  ctx.fillStyle = 'rgba(255,255,255,0.95)';
+  ctx.font = 'bold 34px ' + FONT;
+  ctx.fillText('你是馅饼里的哪一块？', W / 2, H - 152);
+  ctx.font = '24px ' + FONT;
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  ctx.fillText('jp163163.github.io/meihaorensheng', W / 2, H - 100);
+
+  const url = cv.toDataURL('image/png');
+  document.getElementById('shareImg').src = url;
+  document.getElementById('shareDownload').href = url;
+  document.getElementById('shareModal').classList.add('active');
+}
+
+function closeShareModal(e) {
+  if (e && e.target !== e.currentTarget) return;
+  document.getElementById('shareModal').classList.remove('active');
+}
+
 function showResult() {
   // 计算主类型
   let mainType = 'A';
@@ -917,6 +1034,7 @@ function restart() {
   userFocus = '';
   currentMainType = 'A';
   // 重置 UI 状态
+  document.getElementById('shareModal').classList.remove('active');
   document.getElementById('aiReportCard').style.display = 'none';
   document.getElementById('ctaBox').style.display = '';
   document.getElementById('page-result').classList.remove('active');
