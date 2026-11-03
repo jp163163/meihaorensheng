@@ -182,20 +182,20 @@
     </div>
 
     <div class="cta-box" id="ctaBox">
-      <h4>🔓 想要专属AI深度报告？</h4>
-      <p>AI结合你的性别、出生顺序和童年经历<br>生成1500字个性化解读</p>
+      <h4>🔓 想要专属深度报告？</h4>
+      <p>结合你的性别、出生顺序和童年经历<br>生成1500字个性化解读</p>
       <div class="cta-features">
         <div>✅ 你的隐性类型分析（大部分人是混合型）</div>
         <div>✅ 主类型 + 隐性类型双重剖析</div>
         <div>✅ 改善父母/伴侣关系的具体方案</div>
         <div>✅ 可下载的家庭馅饼图</div>
       </div>
-      <button class="cta-btn" onclick="openPayModal()">解锁AI深度报告 · ¥4.9</button>
+      <button class="cta-btn" onclick="openPayModal()">解锁深度报告 · ¥4.9</button>
     </div>
 
-    <!-- AI深度报告区域（付费解锁后显示） -->
+    <!-- 深度报告区域（付费解锁后显示） -->
     <div class="content-card" id="aiReportCard" style="display:none;">
-      <h3>🤖 AI深度报告（1500字）</h3>
+      <h3>📖 深度报告（1500字）</h3>
       <div id="aiReportContent" style="font-size:14.5px; color:#5a4d3f; line-height:1.8; white-space:pre-wrap;"></div>
     </div>
 
@@ -213,7 +213,7 @@
   <div class="modal-overlay" id="payModal" onclick="closePayModal(event)">
     <div class="modal" onclick="event.stopPropagation()">
       <button class="modal-close" onclick="closePayModal()">✕</button>
-      <h3>🔓 解锁AI深度报告</h3>
+      <h3>🔓 解锁深度报告</h3>
       <div class="modal-price">¥4.9 <small>¥19.9</small></div>
 
       <!-- Tab 切换 -->
@@ -233,7 +233,7 @@
           <strong>微信扫码支付 ¥4.9</strong><br>
           付完款后 → 发截图给我 → 我给你发兑换码
         </div>
-        <div class="contact-tip">📱 加我微信：<strong>szpfszpf</strong><br>（把 szpfszpf 改成你的真实微信号）</div>
+        <div class="contact-tip">📱 加我微信：<strong>szpfszpf</strong></div>
       </div>
 
       <!-- 支付宝收款码 -->
@@ -250,7 +250,7 @@
 
       <!-- 兑换码输入 -->
       <div class="redeem-area" id="tab-redeem" style="display:none;">
-        <p>输入 8 位兑换码解锁AI深度报告 🥧</p>
+        <p>输入 8 位兑换码解锁深度报告 🥧</p>
         <div class="redeem-input">
           <input type="text" id="redeemCode" maxlength="10" placeholder="XXXX-XXXX" oninput="this.value=this.value.toUpperCase()">
           <button onclick="redeemCode()">解锁</button>
@@ -316,7 +316,7 @@ function redeemCode() {
 
   usedCodes.add(input);
   localStorage.setItem(UNLOCK_KEY, '1');
-  okEl.textContent = '🎉 解锁成功！AI深度报告已经在下面了～'; okEl.style.display = 'block';
+  okEl.textContent = '🎉 解锁成功！深度报告已经在下面了～'; okEl.style.display = 'block';
 
   setTimeout(() => {
     closePayModal();
@@ -688,7 +688,7 @@ function showResult() {
   }
 
   const r = results[mainType];
-  currentMainType = mainType; // 保存给 AI 报告生成用
+  currentMainType = mainType; // 保存给深度报告生成用
 
   // 渲染
   const card = document.getElementById('resultTypeCard');
@@ -710,13 +710,13 @@ function showResult() {
   // 滚动到顶部
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
-  // 如果已经解锁过（本地标记），直接显示AI报告
+  // 如果已经解锁过（本地标记），直接显示深度报告
   if (checkUnlocked()) showAIReview();
 
   console.log('主类型:', mainType, '分数:', scores);
 }
 
-// ========== AI深度报告生成（模板版，以后可接真实GPT API） ==========
+// ========== 深度报告生成（模板版，以后可接真实接口） ==========
 const aiReviewTemplates = {
   A: {
     gender_female: '作为一个女孩子，你从小被全家的爱包围着——',
@@ -799,7 +799,7 @@ function showAIReview() {
   const birthKey = 'birth_' + (userBirthOrder || 'only');
 
   let report = '';
-  report += '🤖 AI深度报告 · 你的家庭馅饼之旅\n\n';
+  report += '📖 深度报告 · 你的家庭馅饼之旅\n\n';
   report += '━━━━━━━━━━━━━━━━━━━━━━\n\n';
   report += tpl[genderKey] + '\n\n';
   report += tpl[birthKey] + '\n\n';
